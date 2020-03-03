@@ -1,19 +1,16 @@
 file(GLOB SRC_LIST
-    "${CMAKE_SOURCE_DIR}/include/k/*.h"
-    "${CMAKE_SOURCE_DIR}/include/k/*.hpp"
-    "${CMAKE_SOURCE_DIR}/src/k/*.c"
-    "${CMAKE_SOURCE_DIR}/src/k/*.cc"
-    "${CMAKE_SOURCE_DIR}/src/k/*.cpp"
-    "${CMAKE_SOURCE_DIR}/src/k/*.cxx"
+    "${PROJECT_SOURCE_DIR}/include/k/*.h"
+    "${PROJECT_SOURCE_DIR}/include/k/*.hpp"
+    "${PROJECT_SOURCE_DIR}/src/k/*.c"
     )
-list(REMOVE_ITEM SRC_LIST "${CMAKE_SOURCE_DIR}/src/k/lua.c")
+list(REMOVE_ITEM SRC_LIST "${PROJECT_SOURCE_DIR}/src/k/lua.c")
 
 kcompile_as_cpp(${SRC_LIST})
 set(TARGET_NAME "luac")
 
 add_executable(${TARGET_NAME} ${SRC_LIST})
 target_include_directories(${TARGET_NAME}
-    PRIVATE ${CMAKE_SOURCE_DIR}/include/k
+    PRIVATE ${PROJECT_SOURCE_DIR}/include/k
     )
 
 if (MSVC)
