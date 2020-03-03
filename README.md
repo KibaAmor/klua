@@ -2,7 +2,7 @@
 
 A very simple C++11 wrapper for lua utility functions.
 
-一个非常简单的用于C++11的lua使用函数封装。
+一个非常简单的用于C++11的lua实用函数封装。
 
 ## 编译环境
 
