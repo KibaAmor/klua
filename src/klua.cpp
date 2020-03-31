@@ -2,10 +2,9 @@
 #include "k/lualib.h"
 #include <cstdio>
 
+namespace {
 
-namespace
-{
-    const char* klua_lib = R"(
+const char* klua_lib = R"(
 klua = {}
 
 function klua.dump(value, desc, nesting)
@@ -72,108 +71,106 @@ function klua.dump(value, desc, nesting)
     end
 end
 )";
-}
 
-namespace klua
+} // namespace
+
+namespace klua {
+
+lua::lua() noexcept
+    : _save(0)
 {
-    lua::lua() noexcept : _save(0)
-    {
-        _lua = luaL_newstate();
-        luaL_checkversion(_lua);
-    }
-
-    lua::~lua() noexcept
-    {
-        lua_close(_lua);
-        _lua = nullptr;
-    }
-
-    bool lua::load_stdlibs()
-    {
-        luaL_openlibs(_lua);
-        return dostring(klua_lib);
-    }
-
-    bool lua::add_path(const std::string& path)
-    {
-        return dostring("package.path = package.path .. ';" + path + "/?.lua'");
-    }
-
-    bool lua::add_cpath(const std::string& cpath)
-    {
-#ifdef _WIN32
-        return dostring("package.cpath = package.cpath .. ';" + cpath + "/?.dll'");
-#else
-        return dostring("package.cpath = package.cpath .. ';" + cpath + "/?.so'");
-#endif
-    }
-
-    bool lua::requiref(const std::string& modname, lua_CFunction openf, bool global)
-    {
-        luaL_requiref(_lua, modname.c_str(), openf, (global ? 1 : 0));
-        const int type = lua_type(_lua, -1);
-        pop(1);
-        if (LUA_TNIL != type)
-            return true;
-        _err = "requiref failed for module: " + modname;
-        return false;
-    }
-
-    bool lua::dofile(const std::string& filename)
-    {
-        return check(luaL_dofile(_lua, filename.c_str()));
-    }
-
-    bool lua::dostring(const std::string& str)
-    {
-        return check(luaL_dostring(_lua, str.c_str()));
-    }
-
-    bool lua::getglobal(const std::string& name)
-    {
-        auto pos = name.find('.');
-        if (std::string::npos != pos)
-        {
-            std::string mod = name.substr(0, pos);
-            if (LUA_TTABLE != lua_getglobal(_lua, mod.c_str()))
-            {
-                _err = std::string("cannot find module '") + name + "'";
-                lua_pop(_lua, 1);
-                return false;
-            }
-
-            std::string sym = name.substr(pos + 1);
-            if (LUA_TNIL != lua_getfield(_lua, -1, sym.c_str()))
-            {
-                lua_remove(_lua, -2);
-                return true;
-            }
-            _err = "cannot find symbol '" + sym + "'";
-            lua_pop(_lua, 2);
-        }
-        else
-        {
-            if (LUA_TNIL != lua_getglobal(_lua, name.c_str()))
-                return true;
-            _err = "cannot find symbol '" + name + "'";
-            lua_pop(_lua, 1);
-        }
-        return false;
-    }
-
-    bool lua::call(int narg, int nret)
-    {
-        return check(lua_pcall(_lua, narg, nret, 0));
-    }
-
-    bool lua::check(int status)
-    {
-        if (LUA_OK == status)
-            return true;
-        const auto* msg = lua_tostring(_lua, -1);
-        if (nullptr != msg)
-            _err = msg;
-        lua_pop(_lua, 1);
-        return false;
-    }
+    _lua = luaL_newstate();
+    luaL_checkversion(_lua);
 }
+
+lua::~lua() noexcept
+{
+    lua_close(_lua);
+    _lua = nullptr;
+}
+
+bool lua::load_stdlibs()
+{
+    luaL_openlibs(_lua);
+    return dostring(klua_lib);
+}
+
+bool lua::add_path(const std::string& path)
+{
+    return dostring("package.path = package.path .. ';" + path + "/?.lua'");
+}
+
+bool lua::add_cpath(const std::string& cpath)
+{
+#ifdef _WIN32
+    return dostring("package.cpath = package.cpath .. ';" + cpath + "/?.dll'");
+#else
+    return dostring("package.cpath = package.cpath .. ';" + cpath + "/?.so'");
+#endif
+}
+
+bool lua::requiref(const std::string& modname, lua_CFunction openf, bool global)
+{
+    luaL_requiref(_lua, modname.c_str(), openf, (global ? 1 : 0));
+    const int type = lua_type(_lua, -1);
+    pop(1);
+    if (LUA_TNIL != type)
+        return true;
+    _err = "requiref failed for module: " + modname;
+    return false;
+}
+
+bool lua::dofile(const std::string& filename)
+{
+    return check(luaL_dofile(_lua, filename.c_str()));
+}
+
+bool lua::dostring(const std::string& str)
+{
+    return check(luaL_dostring(_lua, str.c_str()));
+}
+
+bool lua::getglobal(const std::string& name)
+{
+    auto pos = name.find('.');
+    if (std::string::npos != pos) {
+        std::string mod = name.substr(0, pos);
+        if (LUA_TTABLE != lua_getglobal(_lua, mod.c_str())) {
+            _err = std::string("cannot find module '") + name + "'";
+            lua_pop(_lua, 1);
+            return false;
+        }
+
+        std::string sym = name.substr(pos + 1);
+        if (LUA_TNIL != lua_getfield(_lua, -1, sym.c_str())) {
+            lua_remove(_lua, -2);
+            return true;
+        }
+        _err = "cannot find symbol '" + sym + "'";
+        lua_pop(_lua, 2);
+    } else {
+        if (LUA_TNIL != lua_getglobal(_lua, name.c_str()))
+            return true;
+        _err = "cannot find symbol '" + name + "'";
+        lua_pop(_lua, 1);
+    }
+    return false;
+}
+
+bool lua::call(int narg, int nret)
+{
+    return check(lua_pcall(_lua, narg, nret, 0));
+}
+
+bool lua::check(int status)
+{
+    if (LUA_OK == status)
+        return true;
+    const auto* msg = lua_tostring(_lua, -1);
+    if (nullptr != msg)
+        _err = msg;
+    lua_pop(_lua, 1);
+    return false;
+}
+
+} // namespace klua

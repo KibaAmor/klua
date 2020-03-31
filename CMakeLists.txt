@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(klua)
+project(klua CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,7 +13,7 @@ set(CMAKE_RELWITHDEBINFO_POSTFIX "_rwdi" CACHE STRING "postfix for MinsizeReleas
 set(CMAKE_MINSIZEREL_POSTFIX "_msr" CACHE STRING "postfix for ReleaseWithDebug-built libraries" FORCE)
 
 if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE RELEASE)
+    set(CMAKE_BUILD_TYPE RELWITHDEBINFO)
 endif()
 message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
@@ -36,7 +36,7 @@ function (kcompile_as_cpp)
         if (filename MATCHES "^.*\.c$")
             set_source_files_properties(${filename} PROPERTIES LANGUAGE CXX)
             if (MSVC)
-                set_source_files_properties(${filename} PROPERTIES COMPILE_FLAGS "/W3 /wd4334")
+                set_source_files_properties(${filename} PROPERTIES COMPILE_FLAGS "/W3 /wd4334 /wd4244")
             endif()
         endif(filename MATCHES "^.*\.c$")
     endforeach(filename)
@@ -66,10 +66,7 @@ target_include_directories(${PROJECT_NAME}
 
 if (NOT WIN32)
     add_definitions(-DLUA_USE_LINUX)
-    target_link_libraries(${PROJECT_NAME}
-        m
-        dl
-        )
+    target_link_libraries(${PROJECT_NAME} m dl)
 endif()
 
 
